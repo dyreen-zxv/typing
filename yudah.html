@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DyreenType — Minimalist Typing Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --panel-bg: #161b22;
+            --border-color: #30363d;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent-glow: rgba(88, 166, 255, 0.15);
+            --correct: #3fb950;
+            --correct-bg: rgba(63, 185, 80, 0.1);
+            --error: #f85149;
+            --error-bg: rgba(248, 81, 73, 0.15);
+            --font-ui: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 1.5rem;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        header {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.25rem;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+        }
+
+        .brand-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent);
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #3fb950;
+            background: rgba(63, 185, 80, 0.1);
+            border: 1px solid rgba(63, 185, 80, 0.2);
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: #3fb950;
+            border-radius: 50%;
+        }
+
+        main {
+            width: 100%;
+            max-width: 900px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .dashboard {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.75rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #21262d;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 0.55rem 1.1rem;
+            border-radius: 8px;
+            font-family: var(--font-ui);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: #30363d;
+            border-color: #8b949e;
+            color: #ffffff;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #0d1117;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: #79c0ff;
+            color: #0d1117;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .metric-card {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: left;
+        }
+
+        .metric-value {
+            font-family: var(--font-mono);
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #ffffff;
+            line-height: 1.2;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .typing-area {
+            position: relative;
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            font-family: var(--font-mono);
+            font-size: 1.25rem;
+            line-height: 1.7;
+            height: 220px;
+            overflow-y: auto;
+            word-break: break-word;
+            white-space: pre-wrap;
+            user-select: none;
+            cursor: pointer;
+            transition: border-color 0.2s ease;
+        }
+
+        .typing-area:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .char {
+            color: #484f58;
+            transition: color 0.1s ease, background 0.1s ease;
+            border-radius: 2px;
+        }
+
+        .char.correct {
+            color: var(--correct);
+            background-color: var(--correct-bg);
+        }
+
+        .char.incorrect {
+            color: var(--error);
+            background-color: var(--error-bg);
+            text-decoration: underline;
+        }
+
+        .char.current {
+            color: #ffffff;
+            background-color: var(--accent);
+            animation: cursor-pulse 1.2s infinite;
+        }
+
+        @keyframes cursor-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        #hidden-input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            left: -9999px;
+        }
+
+        .hint-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(13, 17, 23, 0.85);
+            backdrop-filter: blur(8px);
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            padding: 1.5rem;
+        }
+
+        .modal-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2.5rem;
+            max-width: 440px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-card h2 {
+            font-size: 1.5rem;
+            color: #ffffff;
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-card p.sub {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 2rem;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .summary-item {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            border-radius: 10px;
+        }
+
+        .summary-val {
+            font-family: var(--font-mono);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .summary-lbl {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+            text-transform: uppercase;
+        }
+
+        footer {
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 640px) {
+            .metrics-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .dashboard {
+                padding: 1.25rem;
+            }
+            .typing-area {
+                font-size: 1.05rem;
+                height: 180px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand">
+            <span class="brand-dot"></span>
+            DyreenType
+        </div>
+        <div class="status-badge">
+            <span class="status-dot"></span>
+            Offline Engine Ready
+        </div>
+    </header>
+
+    <main>
+        <div class="dashboard">
+            <div class="toolbar">
+                <div class="file-btn-wrapper">
+                    <label class="btn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Import .TXT File
+                        <input type="file" id="file-input" accept=".txt">
+                    </label>
+                </div>
+                <button class="btn" onclick="resetTest()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                    Restart Test
+                </button>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-value" id="wpm">0</div>
+                    <div class="metric-label">WPM</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="accuracy">100%</div>
+                    <div class="metric-label">Accuracy</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="timer">0s</div>
+                    <div class="metric-label">Time Elapsed</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="errors">0</div>
+                    <div class="metric-label">Uncorrected Errors</div>
+                </div>
+            </div>
+
+            <div class="typing-area" id="typing-box" tabindex="0"></div>
+            <input type="text" id="hidden-input" autocomplete="off" capitalize="off" spellcheck="false">
+
+            <div class="hint-text">
+                Click or tap the text area to start typing. Works seamlessly offline.
+            </div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="result-modal">
+        <div class="modal-card">
+            <h2>Session Complete</h2>
+            <p class="sub">Performance summary for current passage</p>
+            
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-val" id="final-wpm">0</div>
+                    <div class="summary-lbl">Net Speed (WPM)</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-val" id="final-acc" style="color: var(--correct)">100%</div>
+                    <div class="summary-lbl">Accuracy Rate</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-val" id="final-time" style="color: var(--text-main)">0s</div>
+                    <div class="summary-lbl">Duration</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-val" id="final-errors" style="color: var(--error)">0</div>
+                    <div class="summary-lbl">Total Errors</div>
+                </div>
+            </div>
+
+            <button class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.75rem;" onclick="closeModal()">
+                Continue Practice
+            </button>
+        </div>
+    </div>
+
+    <footer>
+        DyreenType Web Application &bull; Standard Offline Edition
+    </footer>
+
+    <script>
+        const defaultText = "Professional typing practice requires consistency and precision. By focusing on accuracy first, speed will naturally follow as muscle memory develops over time. Upload your own custom text files to tailor your practice sessions to specific learning material or code documentation.";
+
+        let textToType = defaultText;
+        let charIndex = 0;
+        let errors = 0;
+        let typedChars = 0;
+        let timer = null;
+        let timeElapsed = 0;
+        let isTesting = false;
+
+        const typingBox = document.getElementById('typing-box');
+        const hiddenInput = document.getElementById('hidden-input');
+        const fileInput = document.getElementById('file-input');
+
+        const wpmEl = document.getElementById('wpm');
+        const accuracyEl = document.getElementById('accuracy');
+        const timerEl = document.getElementById('timer');
+        const errorsEl = document.getElementById('errors');
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const content = evt.target.result.trim();
+                if (content.length > 0) {
+                    textToType = content;
+                    resetTest();
+                } else {
+                    alert("The uploaded text file is empty.");
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        function renderText() {
+            typingBox.innerHTML = '';
+            textToType.split('').forEach((char, idx) => {
+                const span = document.createElement('span');
+                span.classList.add('char');
+                span.innerText = char;
+                if (idx === 0) span.classList.add('current');
+                typingBox.appendChild(span);
+            });
+        }
+
+        function startTimer() {
+            if (!isTesting) {
+                isTesting = true;
+                timer = setInterval(() => {
+                    timeElapsed++;
+                    timerEl.innerText = timeElapsed + 's';
+                    updateWPM();
+                }, 1000);
+            }
+        }
+
+        function updateWPM() {
+            if (timeElapsed === 0) return;
+            const words = (charIndex - errors) / 5;
+            const wpm = Math.max(0, Math.round((words / timeElapsed) * 60));
+            wpmEl.innerText = isNaN(wpm) ? 0 : wpm;
+        }
+
+        function updateAccuracy() {
+            if (typedChars === 0) {
+                accuracyEl.innerText = '100%';
+                return;
+            }
+            const acc = Math.max(0, Math.round(((typedChars - errors) / typedChars) * 100));
+            accuracyEl.innerText = acc + '%';
+        }
+
+        function handleInput(charTyped, isBackspace = false) {
+            const spans = typingBox.querySelectorAll('.char');
+
+            if (isBackspace) {
+                if (charIndex > 0) {
+                    spans[charIndex].classList.remove('current');
+                    charIndex--;
+                    if (spans[charIndex].classList.contains('incorrect')) {
+                        errors = Math.max(0, errors - 1);
+                        errorsEl.innerText = errors;
+                    }
+                    spans[charIndex].className = 'char current';
+                }
+                return;
+            }
+
+            if (charIndex >= textToType.length) return;
+
+            startTimer();
+            typedChars++;
+
+            const expectedChar = textToType[charIndex];
+
+            if (charTyped === expectedChar) {
+                spans[charIndex].className = 'char correct';
+            } else {
+                spans[charIndex].className = 'char incorrect';
+                errors++;
+                errorsEl.innerText = errors;
+            }
+
+            charIndex++;
+
+            if (charIndex < textToType.length) {
+                spans[charIndex].className = 'char current';
+                
+                const currentSpan = spans[charIndex];
+                if (currentSpan.offsetTop > typingBox.scrollTop + typingBox.clientHeight - 40) {
+                    typingBox.scrollTop = currentSpan.offsetTop - 40;
+                }
+            } else {
+                finishTest();
+            }
+
+            updateAccuracy();
+            updateWPM();
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (document.activeElement === fileInput) return;
+
+            if (e.key === 'Backspace') {
+                handleInput('', true);
+            } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                handleInput(e.key);
+            }
+        });
+
+        typingBox.addEventListener('click', () => {
+            hiddenInput.focus();
+            typingBox.focus();
+        });
+
+        hiddenInput.addEventListener('input', (e) => {
+            const val = e.target.value;
+            if (val.length > 0) {
+                const charTyped = val[val.length - 1];
+                handleInput(charTyped);
+                hiddenInput.value = '';
+            }
+        });
+
+        function finishTest() {
+            clearInterval(timer);
+            isTesting = false;
+
+            document.getElementById('final-wpm').innerText = wpmEl.innerText;
+            document.getElementById('final-acc').innerText = accuracyEl.innerText;
+            document.getElementById('final-time').innerText = timerEl.innerText;
+            document.getElementById('final-errors').innerText = errors;
+
+            document.getElementById('result-modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('result-modal').style.display = 'none';
+            resetTest();
+        }
+
+        function resetTest() {
+            clearInterval(timer);
+            timer = null;
+            timeElapsed = 0;
+            charIndex = 0;
+            errors = 0;
+            typedChars = 0;
+            isTesting = false;
+
+            wpmEl.innerText = '0';
+            accuracyEl.innerText = '100%';
+            timerEl.innerText = '0s';
+            errorsEl.innerText = '0';
+            typingBox.scrollTop = 0;
+
+            renderText();
+        }
+
+        resetTest();
+    </script>
+</body>
+</html>
+
